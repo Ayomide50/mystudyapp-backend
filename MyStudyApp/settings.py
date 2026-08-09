@@ -6,6 +6,7 @@ from pathlib import Path
 from datetime import timedelta
 import os
 from decouple import config
+import dj_database_url
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -85,24 +86,11 @@ TEMPLATES = [
 WSGI_APPLICATION = 'MyStudyApp.wsgi.application'
 
 # Database configuration
-_db_engine = config('DATABASE_ENGINE', default='django.db.backends.sqlite3')
-_db_name   = config('DATABASE_NAME',   default=str(BASE_DIR / 'db.sqlite3'))
-
 DATABASES = {
-    'default': {
-        'ENGINE': _db_engine,
-        'NAME': _db_name,
-        **(
-            {
-                'USER':     config('DATABASE_USER',     default=''),
-                'PASSWORD': config('DATABASE_PASSWORD', default=''),
-                'HOST':     config('DATABASE_HOST',     default='localhost'),
-                'PORT':     config('DATABASE_PORT',     default='5432'),
-                'OPTIONS':  {'connect_timeout': 10},
-            }
-            if 'postgresql' in _db_engine else {}
-        ),
-    }
+    "default": dj_database_url.config(
+        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        conn_max_age=600,
+    )
 }
 
 # Password validation
