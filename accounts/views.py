@@ -4,6 +4,12 @@ from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework_simplejwt.tokens import RefreshToken
 from django.contrib.auth import get_user_model
+from django.contrib.auth.tokens import default_token_generator
+from django.core.mail import send_mail
+from django.utils.encoding import force_bytes, force_str
+from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
+from django.conf import settings
+from urllib.parse import urlencode
 from drf_spectacular.utils import extend_schema, OpenApiResponse
 
 from .serializers import (
@@ -85,7 +91,20 @@ class ForgotPasswordView(views.APIView):
         email = serializer.validated_data['email']
         user = User.objects.filter(email=email).first()
         if user:
-            return Response({'success': True, 'message': 'Password reset instructions sent to your email.'})
+            uid = urlsafe_base64_encode(force_bytes(user.pk))
+            token = default_token_generator.make_token(user)
+            reset_url = f"{settings.FRONTEND_URL}/reset-password?{urlencode({'uid': uid, 'token': token})}"
+            send_mail(
+                subject='Reset your MyStudyApp password',
+                message=(
+                    'You requested a password reset for your MyStudyApp account.\n\n'
+                    f'Reset your password: {reset_url}\n\n'
+                    'If you did not request this, you can safely ignore this email.'
+                ),
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[user.email],
+                fail_silently=False,
+            )
         return Response({'success': True, 'message': 'If an account exists, a reset email was sent.'})
 
 class ResetPasswordView(views.APIView):
@@ -96,6 +115,17 @@ class ResetPasswordView(views.APIView):
     def post(self, request):
         serializer = ResetPasswordSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
+        try:
+            user_id = force_str(urlsafe_base64_decode(serializer.validated_data['uid']))
+            user = User.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, User.DoesNotExist):
+            return Response({'success': False, 'message': 'Invalid or expired reset link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not default_token_generator.check_token(user, serializer.validated_data['resetToken']):
+            return Response({'success': False, 'message': 'Invalid or expired reset link.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user.set_password(serializer.validated_data['newPassword'])
+        user.save(update_fields=['password'])
         return Response({'success': True, 'message': 'Password has been reset successfully.'})
 
 class LogoutView(views.APIView):
