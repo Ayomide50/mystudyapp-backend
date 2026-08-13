@@ -201,20 +201,25 @@ class Command(BaseCommand):
                 if status_val not in dict(User.Status.choices):
                     status_val = User.Status.ACTIVE
 
-                user, created = User.objects.update_or_create(
-                    email=email,
-                    defaults={
-                        'full_name': row.get('full_name', '').strip(),
-                        'role': role_val,
-                        'status': status_val,
-                    }
-                )
-                if created:
+                user = User.objects.filter(email=email).first()
+                if user:
+                    user.username = email or user.username
+                    user.full_name = row.get('full_name', '').strip()
+                    user.role = role_val
+                    user.status = status_val
+                    user.save()
+                    stats['updated'] += 1
+                else:
+                    user = User(
+                        email=email,
+                        username=email,
+                        full_name=row.get('full_name', '').strip(),
+                        role=role_val,
+                        status=status_val,
+                    )
                     user.set_unusable_password()
                     user.save()
                     stats['imported'] += 1
-                else:
-                    stats['updated'] += 1
 
     def import_departments(self, data_dir, stats):
         filepath = self.find_csv(data_dir, 'Department_export.csv')

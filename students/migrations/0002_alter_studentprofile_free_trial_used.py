@@ -10,9 +10,27 @@ class Migration(migrations.Migration):
     ]
 
     operations = [
-        migrations.AlterField(
-            model_name='studentprofile',
-            name='free_trial_used',
-            field=models.JSONField(blank=True, default=dict, verbose_name='Free Trial Used'),
+        migrations.SeparateDatabaseAndState(
+            database_operations=[
+                migrations.RunSQL(
+                    sql=(
+                        "ALTER TABLE students_studentprofile "
+                        "ALTER COLUMN free_trial_used TYPE jsonb "
+                        "USING to_jsonb(free_trial_used)"
+                    ),
+                    reverse_sql=(
+                        "ALTER TABLE students_studentprofile "
+                        "ALTER COLUMN free_trial_used TYPE boolean "
+                        "USING free_trial_used::boolean"
+                    ),
+                ),
+            ],
+            state_operations=[
+                migrations.AlterField(
+                    model_name='studentprofile',
+                    name='free_trial_used',
+                    field=models.JSONField(blank=True, default=dict, verbose_name='Free Trial Used'),
+                ),
+            ],
         ),
     ]

@@ -17,7 +17,14 @@ SECRET_KEY = config('SECRET_KEY', default='django-insecure-9gs1(b^$huidptuoa@hky
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool)
 
-ALLOWED_HOSTS = config('ALLOWED_HOSTS', default='*').split(',')
+ALLOWED_HOSTS = [
+    host.strip()
+    for host in config(
+        'ALLOWED_HOSTS',
+        default='mystudyapp-backend-five.vercel.app',
+    ).split(',')
+    if host.strip()
+]
 
 # Custom User Model
 AUTH_USER_MODEL = 'accounts.User'
@@ -160,7 +167,10 @@ else:
     CORS_ALLOW_ALL_ORIGINS = False
     CORS_ALLOWED_ORIGINS = [
         origin.strip()
-        for origin in config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000').split(',')
+        for origin in config(
+            'CORS_ALLOWED_ORIGINS',
+            default='https://mystudyapp-frontend.vercel.app',
+        ).split(',')
         if origin.strip()
     ]
 CORS_ALLOW_CREDENTIALS = True
@@ -178,7 +188,10 @@ if not DEBUG:
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [
         origin.strip()
-        for origin in config('CORS_ALLOWED_ORIGINS', default='http://localhost:3000').split(',')
+        for origin in config(
+            'CORS_ALLOWED_ORIGINS',
+            default='https://mystudyapp-frontend.vercel.app',
+        ).split(',')
         if origin.strip()
     ]
 
