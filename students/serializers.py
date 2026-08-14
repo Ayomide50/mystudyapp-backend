@@ -24,3 +24,9 @@ class StudentProfileSerializer(serializers.ModelSerializer):
             'total_correct', 'total_practice_sessions', 'total_mock_exams', 
             'created_at', 'updated_at'
         )
+
+    def update(self, instance, validated_data):
+        department_id = validated_data.pop('department_id', serializers.empty)
+        if department_id is not serializers.empty:
+            instance.department_id = department_id or None
+        return super().update(instance, validated_data)

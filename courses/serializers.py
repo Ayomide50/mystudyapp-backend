@@ -16,3 +16,14 @@ class CourseSerializer(serializers.ModelSerializer):
         )
         read_only_fields = ('id', 'created_at', 'updated_at')
 
+    def create(self, validated_data):
+        department_id = validated_data.pop('department_id', None)
+        if department_id:
+            validated_data['department_id'] = department_id
+        return super().create(validated_data)
+
+    def update(self, instance, validated_data):
+        department_id = validated_data.pop('department_id', serializers.empty)
+        if department_id is not serializers.empty:
+            instance.department_id = department_id or None
+        return super().update(instance, validated_data)
